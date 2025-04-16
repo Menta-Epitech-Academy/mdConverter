@@ -111,6 +111,32 @@ function convert_to_pdf {
 }
 
 #----------------------------
+# convert_to_docx
+# @param files_list the list of files to convert
+# @param subject_name the name of the subject
+#----------------------------
+function convert_to_docx {
+    local files_list=("$@")
+    if [ ${#files_list[@]} -eq 0 ]; then
+        echo "Erreur : Aucun fichier à convertir trouvé."
+        exit $ERROR_CODE
+    fi
+
+    local output_name="${files_list[0]##*/}"
+    unset 'files_list[0]'
+
+    echo "Fichiers à convertir :${files_list[@]}"
+
+    pandoc "${files_list[@]}" --lua-filter=${SCRIPT_DIR}/filter/init.lua -o "$output_name.docx"
+    if [ $? -eq 0 ]; then
+        echo "DOCX généré avec succès : $output_name.docx"
+    else
+        echo "Erreur lors de la génération du DOCX."
+        exit $ERROR_CODE
+    fi
+}
+
+#----------------------------
 # PARSING ARGUMENTS
 #----------------------------
 
@@ -186,6 +212,10 @@ case $OUTPUT_TYPE in
     pdf)
         echo "Conversion en PDF..."
         convert_to_pdf "$subject_name" "${files_list[@]}" 
+        ;;
+    docx)
+        echo "Conversion en DOCX..."
+        convert_to_docx "$subject_name" "${files_list[@]}"
         ;;
     *)
         echo "Erreur : Type de document non pris en charge : $OUTPUT_TYPE"
