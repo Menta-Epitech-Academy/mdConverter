@@ -102,9 +102,6 @@ function convert_to_pdf {
     unset 'files_list[0]'
 
     echo "Fichiers à convertir :${files_list[@]}"
-    if [ -z "$OUTPUT_DIR" ]; then
-        OUTPUT_DIR="."
-    fi
 
     if [ ! -d "$OUTPUT_DIR" ]; then
         mkdir -p "$OUTPUT_DIR"
@@ -139,9 +136,6 @@ function convert_to_docx {
     unset 'files_list[0]'
 
     echo "Fichiers à convertir :${files_list[@]}"
-        if [ -z "$OUTPUT_DIR" ]; then
-        OUTPUT_DIR="."
-    fi
 
     if [ ! -d "$OUTPUT_DIR" ]; then
         mkdir -p "$OUTPUT_DIR"
@@ -169,6 +163,7 @@ Options:
   -h, --help        Affiche ce message d'aide et quitte.
   -c, --config      Chemin vers le fichier de configuration JSON. Par défaut : './config.json'.
   -t, --type        Type de document à générer. Par défaut : 'pdf'.
+  -o, --outputDir   Répertoire de sortie pour les fichiers générés. Par défaut : './'.
   "
 
 while [[ $# -gt 0 ]]; do
