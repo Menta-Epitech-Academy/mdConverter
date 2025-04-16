@@ -1,12 +1,5 @@
 name: Markdown Converter
 description: Converts Markdown to pdf using Docker
-inputs:
-  input:
-    description: Input Markdown file
-    required: true
-  output:
-    description: Output pdf file
-    required: true
 runs:
   using: docker
   image: docker://ghcr.io/menta-epitech-academy/docker-md-converter:main
