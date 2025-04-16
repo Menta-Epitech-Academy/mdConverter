@@ -7,7 +7,7 @@ on:
 env:
   REGISTRY: ghcr.io
   OWNER: menta-epitech-academy
-  IMAGE_NAME: docker-md-converter
+  IMAGE_NAME: mdconverter
   IMAGE_VERSION: latest
   IMAGE_DESCRIPTION: "A Markdown to PDF converter using pandoc and LaTeX."
 
