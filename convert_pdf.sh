@@ -6,6 +6,8 @@ if [[ ! -d "$SCRIPT_DIR" ]]; then SCRIPT_DIR="$PWD"; fi
 ERROR_CODE=1
 
 CONFIG_FILE="./config.json"
+OUTPUT_TYPE="pdf"
+OUTPUT_DIR="."
 
 
 #----------------------------
@@ -100,8 +102,19 @@ function convert_to_pdf {
     unset 'files_list[0]'
 
     echo "Fichiers à convertir :${files_list[@]}"
+    if [ -z "$OUTPUT_DIR" ]; then
+        OUTPUT_DIR="."
+    fi
 
-    pandoc "${files_list[@]}" --pdf-engine=xelatex --lua-filter=${SCRIPT_DIR}/filter/init.lua -o "$output_name.pdf"
+    if [ ! -d "$OUTPUT_DIR" ]; then
+        mkdir -p "$OUTPUT_DIR"
+        if [ $? -ne 0 ]; then
+            echo "Erreur : Impossible de créer le répertoire de sortie $OUTPUT_DIR."
+            exit $ERROR_CODE
+        fi
+    fi
+
+    pandoc "${files_list[@]}" --pdf-engine=xelatex --lua-filter=${SCRIPT_DIR}/filter/init.lua -o "$OUTPUT_DIR/$output_name.pdf" 
     if [ $? -eq 0 ]; then
         echo "PDF généré avec succès : $output_name.pdf"
     else
@@ -126,8 +139,19 @@ function convert_to_docx {
     unset 'files_list[0]'
 
     echo "Fichiers à convertir :${files_list[@]}"
+        if [ -z "$OUTPUT_DIR" ]; then
+        OUTPUT_DIR="."
+    fi
 
-    pandoc "${files_list[@]}" --lua-filter=${SCRIPT_DIR}/filter/init.lua -o "$output_name.docx"
+    if [ ! -d "$OUTPUT_DIR" ]; then
+        mkdir -p "$OUTPUT_DIR"
+        if [ $? -ne 0 ]; then
+            echo "Erreur : Impossible de créer le répertoire de sortie $OUTPUT_DIR."
+            exit $ERROR_CODE
+        fi
+    fi
+
+    pandoc "${files_list[@]}" --lua-filter=${SCRIPT_DIR}/filter/init.lua -o "$OUTPUT_DIR/$output_name.docx"
     if [ $? -eq 0 ]; then
         echo "DOCX généré avec succès : $output_name.docx"
     else
@@ -159,6 +183,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -t|--type)
             OUTPUT_TYPE="$2"
+            shift 2
+            ;;
+        -o|--outputDir)
+            OUTPUT_DIR="$2"
             shift 2
             ;;
         *)
@@ -215,6 +243,15 @@ case $OUTPUT_TYPE in
         ;;
     docx)
         echo "Conversion en DOCX..."
+        convert_to_docx "$subject_name" "${files_list[@]}"
+        ;;
+
+    #----------------------------
+    # multiple formats
+    #----------------------------
+    CC)
+        echo "Conversion en PDF et DOCX..."
+        convert_to_pdf "$subject_name" "${files_list[@]}"
         convert_to_docx "$subject_name" "${files_list[@]}"
         ;;
     *)
