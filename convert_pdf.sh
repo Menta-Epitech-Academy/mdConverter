@@ -14,7 +14,7 @@ OUTPUT_TYPE="pdf"
 OUTPUT_DIR="."
 
 FILTER_DIR="${SCRIPT_DIR}/filter"
-FILTER_FILE="${FILTER_DIR}/include_section.lua"
+FILTER_FILE="${FILTER_DIR}/init.lua"
 
 TEMPLATE_DIR="${SCRIPT_DIR}/template/"
 TEMPLATE_FILE="${TEMPLATE_DIR}/pdf/template.tex"
