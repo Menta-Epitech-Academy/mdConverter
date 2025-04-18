@@ -31,51 +31,51 @@ function draw() {
 
 Décomposons le code précédent ensemble :
 
-- ```js
-  function setup() {
-    ...
-  }
-  ```
+```js
+function setup() {
+  ...
+}
+```
 
-  Tout d'abord, nous avons une déclaration de fonction — c'est-à-dire que  
-  nous informons JavaScript que nous créons une fonction qui n'existe pas  
-  encore, appelée `setup`.
+  - Tout d'abord, nous avons une déclaration de fonction — c'est-à-dire que  
+    nous informons JavaScript que nous créons une fonction qui n'existe pas  
+    encore, appelée `setup`.
 
-  Dans le contexte de p5js, cette fonction est utilisée pour  
-  initialiser tout ce qui est **nécessaire** : les variables, d'autres modules  
-  complémentaires, ou ici le `canvas` 🎨
+    Dans le contexte de p5js, cette fonction est utilisée pour  
+    initialiser tout ce qui est **nécessaire** : les variables, d'autres modules  
+    complémentaires, ou ici le `canvas` 🎨
 
-  Le `canvas`, ou « tableau » en français, désigne la partie droite de  
-  l'éditeur que nous avons présentée préalablement. C'est ici que toutes les  
-  opérations graphiques seront dessinées 🖍️
+    Le `canvas`, ou « tableau » en français, désigne la partie droite de  
+    l'éditeur que nous avons présentée préalablement. C'est ici que toutes les  
+    opérations graphiques seront dessinées 🖍️
 
-  Les accolades (`{` et `}`) englobent le contenu de la fonction, c’est-à-dire  
-  le code qui va être exécuté à chaque fois que la fonction est utilisée.  
-  On appelle couramment cette démarcation **le corps de la fonction**.
+    Les accolades (`{` et `}`) englobent le contenu de la fonction, c’est-à-dire  
+    le code qui va être exécuté à chaque fois que la fonction est utilisée.  
+    On appelle couramment cette démarcation **le corps de la fonction**.
 
-- ```js
+ ```js
   createCanvas(400, 400);
   ```
 
-  Cette ligne indique à p5js que nous souhaitons **créer** un tableau d'une  
+-  Cette ligne indique à p5js que nous souhaitons **créer** un tableau d'une  
   taille de **400** pixels par **400** pixels.
 
-- ```js
+ ```js
   function draw() {
     ...
   }
   ```
 
-  Nous déclarons ensuite une seconde fonction, appelée `draw`, qui sera appelée  
+-  Nous déclarons ensuite une seconde fonction, appelée `draw`, qui sera appelée  
   par p5js à **intervalle régulière**.
 
   Le corps de cette fonction contiendra toutes les opérations nécessaires au  
   dessin ; vous pouvez donc dessiner ici des rectangles, des cercles, etc.
 
-- ```js
+```js
   background(220);
   ```
 
-  Cette ligne indique à p5js de remplir le tableau avec une couleur grise.  
+-  Cette ligne indique à p5js de remplir le tableau avec une couleur grise.  
   Étant donné qu'on a spécifié un seul argument à cette fonction, p5js  
   utilise cette valeur pour les composantes rouge, verte et bleue.

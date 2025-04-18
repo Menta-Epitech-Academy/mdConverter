@@ -33,12 +33,11 @@ local function shouldInclude(file_path, section, types)
             if subpart.path then
                 local sub_file_path = subpart.path:gsub("-exercice%.md$", "")
                 if file_path:find(sub_file_path, 1, true) then
-                    print("File path matches: " .. file_path)
-                    if types == "tip" and subpart.showHint ~= nil then
-                        print("Hint found: " .. tostring(subpart.showHint))
+                    if types == "hint" and subpart.showHint ~= nil then
+                        print(" - hint found: " .. tostring(subpart.showHint))
                         return subpart.showHint
                     elseif types == "solution" and subpart.showSolution ~= nil then
-                        print("Solution found: " .. tostring(subpart.showSolution))
+                        print(" - Solution found: " .. tostring(subpart.showSolution))
                         return subpart.showSolution
                     end
                 end
@@ -56,57 +55,84 @@ function getSectionInFile(file_path, section)
         printError("Error: Could not open file " .. file_path)
         return nil
     end
-
-    local in_section = false
-    local section_content = {}
-
-    for line in file:lines() do
-        if line:match('^%s*@section%s+[“"]' .. section .. '[”"]') then
-            in_section = true
-        elseif line:match("@section") then
-            in_section = false
-        elseif in_section then
-            table.insert(section_content, line)
-        end
-    end
-
+    local content = file:read("*all")
+    local doc = pandoc.read(content, "markdown").blocks
     file:close()
-    if #section_content == 0 then
-        print("Warning: Section " .. section .. " not found in file " .. file_path)
-        return nil
+    for _, block in ipairs(doc) do
+        if block.t == "Div" and block.classes:includes("section-" .. section) then
+            print("- Section found: " .. section)
+          return block.content
+        end
     end
-    return table.concat(section_content, "\n")
+    printError("Error: Section " .. section .. " not found in file " .. file_path)
+    return nil
 end
 
-function Block(elem)
-    if elem.t == "Para" then
-        local block_text = pandoc.utils.stringify(elem)
-        local new_elements = {}
+function instert_content(content, env)
+    if env == "hint" then
+        if FORMAT == "html5" then
+            local summary = pandoc.Plain({pandoc.Str("💡 Astuce")})
+            return pandoc.Div(
+              {pandoc.RawBlock('html', '<details class="hintbox">'),
+               pandoc.RawBlock('html', '<summary>'),
+               summary,
+               pandoc.RawBlock('html', '</summary>'),
+               pandoc.Div(content),
+               pandoc.RawBlock('html', '</details>')})
+        end
+        local result = { pandoc.RawBlock("markdown", "indices : ") }
+        for _, block in ipairs(content) do
+            table.insert(result, block)
+        end
+        return result
+    elseif env == "solution" then
+        if FORMAT == "html5" then
+            local summary = pandoc.Plain({pandoc.Str("🧩 Solution")})
+            return pandoc.Div(
+              {pandoc.RawBlock('html', '<details class="solutionbox">'),
+               pandoc.RawBlock('html', '<summary>'),
+               summary,
+               pandoc.RawBlock('html', '</summary>'),
+               pandoc.Div(content),
+               pandoc.RawBlock('html', '</details>')})
+        end
+        local result = { pandoc.RawBlock("markdwon", "solution : ") }
+        for _, block in ipairs(content) do
+            table.insert(result, block)
+        end
+        return result
+    else
+        return content
+    end
+end
 
-        for file_path, section, types in block_text:gmatch('@include%s+“([^”]+)”%s+section=“([^”]+)”%s+type=“([^”]+)”') do
-            print("Include detected: file=" .. file_path .. ", section=" .. section .. " types= " .. types)
+function Div(el)
+    local env = el.classes[1]
+    local new_elements = {}
 
-            if shouldInclude(file_path, section, types) then
-                print("include file " .. file_path .. " and section " .. section)
+    if env == "hint" or env == "solution" then
+        local types = env
+        local file_path = el.attributes["path"]
+        local section = el.attributes["section"]
 
-                local file_content = getSectionInFile(file_path, section)
+        if shouldInclude(file_path, section, types) then
+            print("include file " .. file_path .. " and section " .. section)
 
-                if file_content then
-                    local parsed_content = pandoc.read(file_content, "markdown").blocks
-                    for _, block in ipairs(parsed_content) do
-                        table.insert(new_elements, block)
-                    end
-                else
-                    printError("Error: Section " .. section .. " not found in file " .. file_path)
-                end
+            local content = getSectionInFile(file_path, section)
+
+            if content then
+                print("Content found for section " .. section)
+                return instert_content(content, types)
             else
-                printError("Skipping include for file " .. file_path .. " and section " .. section)
+                printError("Error: Section " .. section .. " not found in file " .. file_path)
             end
-        end
-        if #new_elements > 0 then
-            return new_elements
+        else
+            printError("Skipping include for file " .. file_path .. " and section " .. section)
         end
     end
-    return elem
+    return el
 end
 
+-- Register the Div function to handle Div elements
+
+Div = Div
