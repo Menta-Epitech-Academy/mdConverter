@@ -1,0 +1,54 @@
+\documentclass{article}
+\usepackage{xcolor} % Load xcolor without dvipsnames for compatibility
+\usepackage{float}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{hyperref}
+
+\lstset{
+    basicstyle=\ttfamily,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!5}
+}
+
+\newtcolorbox{Shaded}{
+  colback=gray!5!white,
+  colframe=gray!75!black,
+  boxrule=0.5pt,
+  breakable
+}
+
+\newtcolorbox{hintbox}{
+  colback=blue!5!white,
+  colframe=blue!75!black,
+  title=Indice,
+  fonttitle=\bfseries,
+  breakable
+}
+
+\newtcolorbox{solutionbox}{
+  colback=green!5!white,
+  colframe=green!75!black,
+  title=Solution,
+  fonttitle=\bfseries,
+  breakable
+}
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+
+\newcommand{\defaultimage}[3][]{%
+    \begin{figure}[htbp]
+        \centering
+        \includegraphics[#1]{#2}
+        \caption{#3}
+    \end{figure}
+}
+
+\begin{document}
+
+$body$
+
+\end{document}
