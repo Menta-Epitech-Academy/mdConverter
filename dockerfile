@@ -9,13 +9,24 @@ RUN apk update && apk add --no-cache \
   luarocks \
   build-base \
   unzip \
-  curl
+  curl \
+  git \
+  nodejs \
+  npm \
+  tar
+
+  RUN apk add --no-cache ghc cabal
+
+  RUN cabal update && cabal install pandoc-sidenote
+
+ENV PATH="/root/.local/bin:${PATH}"
 
 COPY . /mdConverter
 
 # install de dkjson dans le container sans luarocks
 RUN curl -o dkjson.lua https://raw.githubusercontent.com/LuaDist/dkjson/master/dkjson.lua \
   && mv dkjson.lua /mdConverter/filter/dkjson.lua
+
 
 WORKDIR /ARTIFACTS
 
