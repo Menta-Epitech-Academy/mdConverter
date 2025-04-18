@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#----------------------------
+#GLOBAL VARIABLES
+#----------------------------
+
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 if [[ ! -d "$SCRIPT_DIR" ]]; then SCRIPT_DIR="$PWD"; fi
 
@@ -9,6 +13,12 @@ CONFIG_FILE="./config.json"
 OUTPUT_TYPE="pdf"
 OUTPUT_DIR="."
 
+FILTER_DIR="${SCRIPT_DIR}/filter"
+FILTER_FILE="${FILTER_DIR}/include_section.lua"
+
+TEMPLATE_DIR="${SCRIPT_DIR}/template/"
+TEMPLATE_FILE="${TEMPLATE_DIR}/pdf/template.tex"
+DEBUG=0
 
 #----------------------------
 # DEPENDENCIES
@@ -23,6 +33,17 @@ for dependency in "${DEPENDENCIES[@]}"; do
     fi
 done
 
+#----------------------------
+# SUPPORTED FORMATS AND THEIR OPTIONS
+#----------------------------
+
+declare -A FORMAT_OPTIONS=(
+    [pdf]="--pdf-engine=xelatex --lua-filter=${FILTER_FILE} --metadata title=$subject_name --toc --number-sections --standalone"
+    [docx]="--lua-filter=${FILTER_FILE}"
+    [html-stdl]="--lua-filter=${FILTER_FILE} --embed-resources --katex --from markdown+tex_math_single_backslash --filter pandoc-sidenote --to html5+smart --template=${TEMPLATE_DIR}/html/standalone/template.html5 --css=${TEMPLATE_DIR}/html/standalone/css/theme.css --css=${TEMPLATE_DIR}/html/standalone/css/skylighting-paper-theme.css --toc --wrap=none --metadata title=$subject_name"
+    [html]="--lua-filter=${FILTER_FILE} --embed-resources --katex --from markdown+tex_math_single_backslash --filter pandoc-sidenote --to html5+smart --template=${TEMPLATE_DIR}/html/standalone/template.html5 --toc --wrap=none --metadata title=$subject_name"
+
+)
 
 #----------------------------
 # FUNCTION
@@ -87,22 +108,32 @@ function extract_file {
 }
 
 #----------------------------
-# convert_to_pdf
+# convert
+# @param output_name the name of the output file
+# @param flag the pandoc flag
+# @param extension the file extension
 # @param files_list the list of files to convert
-# @param subject_name the name of the subject
 #----------------------------
-function convert_to_pdf {
-    local files_list=("$@")
+function convert {
+    local output_name="$1"
+    local flag="$2"
+    local extension="$3"
+    local files_list=("${@:4}")
+    local verbose_flag=""
+
+    if [ -z "$output_name" ]; then
+        echo "Erreur : Aucun nom de fichier de sortie fourni."
+        exit $ERROR_CODE
+    fi
+    if [ -z "$extension" ]; then
+        echo "Erreur : Aucun type de fichier fourni."
+        exit $ERROR_CODE
+    fi
     if [ ${#files_list[@]} -eq 0 ]; then
         echo "Erreur : Aucun fichier à convertir trouvé."
         exit $ERROR_CODE
     fi
-
-    local output_name="${files_list[0]##*/}"
-    unset 'files_list[0]'
-
-    echo "Fichiers à convertir :${files_list[@]}"
-
+    
     if [ ! -d "$OUTPUT_DIR" ]; then
         mkdir -p "$OUTPUT_DIR"
         if [ $? -ne 0 ]; then
@@ -110,49 +141,34 @@ function convert_to_pdf {
             exit $ERROR_CODE
         fi
     fi
+    [ "$DEBUG" -eq 1 ] && verbose_flag="--verbose"
 
-    pandoc "${files_list[@]}" --pdf-engine=xelatex --lua-filter=${SCRIPT_DIR}/filter/init.lua -o "$OUTPUT_DIR/$output_name.pdf" 
+    pandoc "${files_list[@]}" $flag -o "$OUTPUT_DIR/$output_name.$extension"  $verbose_flag
     if [ $? -eq 0 ]; then
-        echo "PDF généré avec succès : $output_name.pdf"
+        echo "${extension} généré avec succès : $output_name.$extension"
     else
-        echo "Erreur lors de la génération du PDF."
+        echo "Erreur lors de la génération du $extension."
         exit $ERROR_CODE
     fi
 }
 
-#----------------------------
-# convert_to_docx
-# @param files_list the list of files to convert
-# @param subject_name the name of the subject
-#----------------------------
-function convert_to_docx {
-    local files_list=("$@")
-    if [ ${#files_list[@]} -eq 0 ]; then
-        echo "Erreur : Aucun fichier à convertir trouvé."
+convert_format() {
+    local format="$1"
+    local options="${FORMAT_OPTIONS[$format]}"
+    
+    if [[ -z "$options" ]]; then
+        echo "Erreur : format non supporté : $format" >&2
         exit $ERROR_CODE
     fi
 
-    local output_name="${files_list[0]##*/}"
-    unset 'files_list[0]'
+    [[ "$format" == "html" || "$format" == "html-stdl" ]] && cp -r "./static" "$OUTPUT_DIR"
+    [[ "$format" == "html-stdl" ]] && cp -r "${TEMPLATE_DIR}/html/standalone/js" "$OUTPUT_DIR"
 
-    echo "Fichiers à convertir :${files_list[@]}"
-
-    if [ ! -d "$OUTPUT_DIR" ]; then
-        mkdir -p "$OUTPUT_DIR"
-        if [ $? -ne 0 ]; then
-            echo "Erreur : Impossible de créer le répertoire de sortie $OUTPUT_DIR."
-            exit $ERROR_CODE
-        fi
-    fi
-
-    pandoc "${files_list[@]}" --lua-filter=${SCRIPT_DIR}/filter/init.lua -o "$OUTPUT_DIR/$output_name.docx"
-    if [ $? -eq 0 ]; then
-        echo "DOCX généré avec succès : $output_name.docx"
-    else
-        echo "Erreur lors de la génération du DOCX."
-        exit $ERROR_CODE
-    fi
+    echo "Conversion en ${format^^}..."
+    [[ "$format" == "html-stdl" ]] && format="html" || format="$format"
+    convert "$subject_name" "$options" "$format" "${files_list[@]}"
 }
+
 
 #----------------------------
 # PARSING ARGUMENTS
@@ -164,6 +180,7 @@ Options:
   -c, --config      Chemin vers le fichier de configuration JSON. Par défaut : './config.json'.
   -t, --type        Type de document à générer. Par défaut : 'pdf'.
   -o, --outputDir   Répertoire de sortie pour les fichiers générés. Par défaut : './'.
+  -d, --debug       Active le mode débogage pour afficher les informations détaillées sur le processus.
   "
 
 while [[ $# -gt 0 ]]; do
@@ -183,6 +200,10 @@ while [[ $# -gt 0 ]]; do
         -o|--outputDir)
             OUTPUT_DIR="$2"
             shift 2
+            ;;
+        -d|--debug)
+            DEBUG=1
+            shift
             ;;
         *)
             echo "Option inconnue : $1"
@@ -231,26 +252,10 @@ if [ -z "$OUTPUT_TYPE" ]; then
     OUTPUT_TYPE="pdf"
 fi
 
-case $OUTPUT_TYPE in
-    pdf)
-        echo "Conversion en PDF..."
-        convert_to_pdf "$subject_name" "${files_list[@]}" 
-        ;;
-    docx)
-        echo "Conversion en DOCX..."
-        convert_to_docx "$subject_name" "${files_list[@]}"
-        ;;
-
-    #----------------------------
-    # multiple formats
-    #----------------------------
-    CC)
-        echo "Conversion en PDF et DOCX..."
-        convert_to_pdf "$subject_name" "${files_list[@]}"
-        convert_to_docx "$subject_name" "${files_list[@]}"
-        ;;
-    *)
-        echo "Erreur : Type de document non pris en charge : $OUTPUT_TYPE"
-        exit $ERROR_CODE
-        ;;
-esac
+if [[ "$OUTPUT_TYPE" == "CC" ]]; then
+    for format in pdf docx html-stdl; do
+        convert_format "$format"
+    done
+else
+    convert_format "$OUTPUT_TYPE"
+fi
