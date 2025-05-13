@@ -133,6 +133,4 @@ function Div(el)
     return el
 end
 
--- Register the Div function to handle Div elements
-
 Div = Div
